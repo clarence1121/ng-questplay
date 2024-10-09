@@ -2,20 +2,23 @@
 pragma solidity ^0.8.20;
 
 import "./interfaces/IERC721.sol";
-import "./interfaces/IAmuletPouch.sol";
 
 /**
  * @dev ERC-721 Token Receiver contract for AmuletPouch.
  */
 contract AmuletPouch {
-    // Amulet 合約地址
+    // Amulet contract address
     IERC721 public immutable amulet;
 
-    // 成員列表
+    // Member list
     mapping(address => bool) private _members;
     address[] private _memberList;
 
-    // 提現請求結構
+    // Tokens owned by the contract
+    mapping(uint256 => bool) private _ownedTokens;
+    uint256[] private _tokenIds;
+
+    // Withdrawal request structure
     struct WithdrawRequest {
         address requester;
         uint256 tokenId;
@@ -24,16 +27,16 @@ contract AmuletPouch {
         mapping(address => bool) hasVoted;
     }
 
-    // 所有提現請求，使用 requestId 作為鍵
+    // All withdrawal requests, using requestId as the key
     mapping(uint256 => WithdrawRequest) private _withdrawRequests;
     uint256 private _currentRequestId;
 
-    // 事件定義
+    // Event definitions
     event WithdrawRequested(address indexed requester, uint256 indexed tokenId, uint256 indexed requestId);
 
     /**
-     * @dev 構造函數，設置 Amulet 合約地址。
-     * @param _amuletAddress Amulet 合約地址。
+     * @dev Constructor, sets the Amulet contract address.
+     * @param _amuletAddress Amulet contract address.
      */
     constructor(address _amuletAddress) {
         require(_amuletAddress != address(0), "AmuletPouch: invalid Amulet address");
@@ -42,137 +45,148 @@ contract AmuletPouch {
     }
 
     /**
-     * @dev 返回是否為成員。
-     * @param _user 要檢查的地址。
+     * @dev Returns whether the user is a member.
+     * @param _user The address to check.
      */
     function isMember(address _user) external view returns (bool) {
         return _members[_user];
     }
 
     /**
-     * @dev 返回總成員數量。
+     * @dev Returns the total number of members.
      */
     function totalMembers() external view returns (uint256) {
         return _memberList.length;
     }
 
     /**
-     * @dev 返回指定 requestId 的請求信息。
-     * @param _requestId 提現請求的 ID。
+     * @dev Returns the request information for a given requestId.
+     * @param _requestId The ID of the withdrawal request.
      */
     function withdrawRequest(uint256 _requestId) external view returns (address, uint256) {
         require(_withdrawRequests[_requestId].exists, "AmuletPouch: request does not exist");
-       WithdrawRequest storage temp =  _withdrawRequests[_requestId];
+        WithdrawRequest storage temp = _withdrawRequests[_requestId];
         return (temp.requester, temp.tokenId);
     }
 
     /**
-     * @dev 返回指定 requestId 的投票數量。
-     * @param _requestId 提現請求的 ID。
+     * @dev Returns the number of votes for a given requestId.
+     * @param _requestId The ID of the withdrawal request.
      */
-    function numVotes(uint256 _requestId) external view  returns (uint256) {
+    function numVotes(uint256 _requestId) external view returns (uint256) {
         require(_withdrawRequests[_requestId].exists, "AmuletPouch: request does not exist");
         return _withdrawRequests[_requestId].votes;
     }
 
     /**
-     * @dev 成員對指定的提現請求進行投票。
-     * @param _requestId 提現請求的 ID。
+     * @dev Members vote for a specified withdrawal request.
+     * @param _requestId The ID of the withdrawal request.
      */
-    function voteFor(uint256 _requestId) external  {
+    function voteFor(uint256 _requestId) external {
         require(_members[msg.sender], "AmuletPouch: caller is not a member");
         WithdrawRequest storage request = _withdrawRequests[_requestId];
         require(request.exists, "AmuletPouch: request does not exist");
         require(!request.hasVoted[msg.sender], "AmuletPouch: already voted for this request");
 
-        // 註記已投票
+        // Mark as voted
         request.hasVoted[msg.sender] = true;
         request.votes += 1;
-
-        // 如果是請求者，默認投票
-        // 根據描述，提請者已經隱含投票，所以在創建請求時應該已經投票
-        // 此處不需要額外處理
-
-        // 不需要觸發事件
     }
 
     /**
-     * @dev 處理指定的提現請求，將 Amulet 轉移給請求者。
-     * @param _requestId 提現請求的 ID。
+     * @dev Allows the requester to withdraw their token after approval.
+     * @param _requestId The ID of the withdrawal request.
      */
-    function withdraw(uint256 _requestId) external  {
+    function withdraw(uint256 _requestId) external {
         WithdrawRequest storage request = _withdrawRequests[_requestId];
         require(request.exists, "AmuletPouch: request does not exist");
         require(msg.sender == request.requester, "AmuletPouch: caller is not the requester");
 
-        uint256 majority = (_memberList.length / 2) + 1;
+        uint256 totalmembers = _memberList.length;
+        uint256 majority = (totalmembers / 2) + 1;
         require(request.votes >= majority, "AmuletPouch: not enough votes");
 
-        // 清除請求
-        delete _withdrawRequests[_requestId];
+        // Store tokenId before modifying the request
+        uint256 tokenId = request.tokenId;
+        address requester = request.requester;
 
-        // 轉移 Amulet 給請求者
-        amulet.safeTransferFrom(address(this), msg.sender, request.tokenId);
+        // Mark the request as processed
+        request.exists = false;
+
+        // Remove token from owned tokens
+        delete _ownedTokens[tokenId];
+
+        // Remove tokenId from _tokenIds array
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            if (_tokenIds[i] == tokenId) {
+                _tokenIds[i] = _tokenIds[_tokenIds.length - 1];
+                _tokenIds.pop();
+                break;
+            }
+        }
+
+        // Transfer the token to the requester
+        amulet.transferFrom(address(this), requester, tokenId);
     }
 
     /**
-     * @dev ERC-721 接受者回調函數，處理接收到的 Amulet。
-     * @param _operator 操作員地址。
-     * @param _from 發送者地址。
-     * @param _tokenId 接收到的 Amulet 的 ID。
-     * @param _data 附加的數據，用於提現請求。
-     * @return bytes4 返回接受者標識符。
+     * @dev Handles the receipt of an NFT.
      */
     function onERC721Received(
-        address _operator,
+        address /* _operator */,
         address _from,
         uint256 _tokenId,
         bytes calldata _data
-    ) external  returns (bytes4) {
+    ) external returns (bytes4) {
         require(msg.sender == address(amulet), "AmuletPouch: only Amulet tokens are accepted");
+        require(_from != address(0), "AmuletPouch: invalid member address");
 
         if (!_members[_from]) {
-            // 新成員，添加到成員列表
+            // New member, add to member list
             _members[_from] = true;
             _memberList.push(_from);
-        } else {
-            if (_data.length > 0) {
-                // 提現請求
-                require(_data.length == 32, "AmuletPouch: invalid data length");
+        }
 
-                uint256 requestedTokenId;
-                // 從 _data 中提取 tokenId
-                assembly {
-                    requestedTokenId := calldataload(132) // _data starts at offset 132
-                }
+        // Record that the contract owns the token
+        _ownedTokens[_tokenId] = true;
+        _tokenIds.push(_tokenId);
 
-                // 創建新的提現請求
-                uint256 requestId = _currentRequestId;
-                WithdrawRequest storage newRequest = _withdrawRequests[requestId];
-                newRequest.requester = _from;
-                newRequest.tokenId = requestedTokenId;
-                newRequest.votes = 1; // 提請者隱含投票
-                newRequest.exists = true;
-                newRequest.hasVoted[_from] = true;
+        // If data is provided, create a withdrawal request
+        if (_data.length > 0) {
+            require(_data.length == 32, "AmuletPouch: invalid data length");
 
-                emit WithdrawRequested(_from, requestedTokenId, requestId);
+            // Use abi.decode to parse `_data` to get `requestedTokenId`
+            uint256 requestedTokenId = abi.decode(_data, (uint256));
 
-                _currentRequestId += 1;
-            }
+            // Ensure the requested token exists in the contract
+            require(_ownedTokens[requestedTokenId], "AmuletPouch: requested token does not exist in pouch");
+
+            // Create a new withdrawal request
+            uint256 requestId = _currentRequestId;
+            WithdrawRequest storage newRequest = _withdrawRequests[requestId];
+            newRequest.requester = _from;
+            newRequest.tokenId = requestedTokenId;
+            newRequest.votes = 1; // Requester implicitly votes for themselves
+            newRequest.exists = true;
+            newRequest.hasVoted[_from] = true;
+
+            emit WithdrawRequested(_from, requestedTokenId, requestId);
+
+            _currentRequestId += 1;
         }
 
         return this.onERC721Received.selector;
     }
 
     /**
-     * @dev 返回當前提現請求的數量。
+     * @dev Returns the current number of withdrawal requests.
      */
     function getCurrentRequestId() external view returns (uint256) {
         return _currentRequestId;
     }
 
     /**
-     * @dev 返回所有成員地址（僅用於測試或前端顯示）。
+     * @dev Returns all member addresses (for testing or frontend display).
      */
     function getAllMembers() external view returns (address[] memory) {
         return _memberList;

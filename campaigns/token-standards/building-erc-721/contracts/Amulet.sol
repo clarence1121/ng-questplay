@@ -120,7 +120,7 @@ contract Amulet {
     /**
      * @dev 返回指定 Token ID 的授權地址
      */
-    function getApproved(uint256 tokenId) internal view  returns (address) {
+    function getApproved(uint256 tokenId) public view  returns (address) {
         require(_exists(tokenId), "Amulet: approved query for nonexistent token");
         return _tokenApprovals[tokenId];
     }
