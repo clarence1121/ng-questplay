@@ -9,9 +9,11 @@ contract Arithmetic {
         int256 lhs, 
         int256 rhs
     ) external pure returns (int256 result) {
+        
         assembly {
-
+            result:=add(lhs,rhs)
         }
+        return result;
     }
 
     /// @notice Returns lhs * rhs.
@@ -21,8 +23,9 @@ contract Arithmetic {
         int256 rhs
     ) external pure returns (int256 result) {
         assembly {
-
+            result:=mul(lhs,rhs)
         }
+        return result;
     }
 
     /// @notice Returns lhs % rhs.
@@ -30,9 +33,11 @@ contract Arithmetic {
         uint256 lhs, 
         uint256 rhs
     ) external pure returns (uint256 result) {
+        uint256 result1;
         assembly {
-
+            result1 := mod(lhs,rhs)
         }
+        return result1;
     }
 
     /// @notice Returns lhs ^ rhs.
@@ -41,8 +46,9 @@ contract Arithmetic {
         uint256 rhs
     ) external pure returns (uint256 result) {
         assembly {
-
+            result:=exp(lhs,rhs)
         }
+        return result;
     }
 
     /// @notice Returns the signed division lhs / rhs
@@ -51,8 +57,9 @@ contract Arithmetic {
         int256 rhs
     ) external pure returns (int256 result) {
         assembly {
-
+            result := sdiv(lhs,rhs)
         }
+        return result;
     }
 
 }

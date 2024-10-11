@@ -6,8 +6,9 @@ contract Comparisons {
     /// @notice Returns value == 0.
     function isZero(int256 value) public pure returns (bool isZero_) {
         assembly {
-
+            isZero_ :=eq(value , 0)
         }
+        return isZero_;
     }
 
     /// @notice Returns lhs > rhs.
@@ -17,8 +18,9 @@ contract Comparisons {
         returns (bool greater)
     {
         assembly {
-
+            greater:=gt(lhs , rhs)
         }
+        return greater;
     }
 
     /// @notice Returns lhs < rhs.
@@ -27,18 +29,20 @@ contract Comparisons {
         int256 rhs
     ) public pure returns (bool lower) {
         assembly {
-
+            lower := slt(lhs,rhs)
         }
+        return lower;
     }
 
     /// @notice Returns true if value < 0 or value == 10, false otherwise.
     function isNegativeOrEqualTen(
-        int256 value
-    ) public pure returns (bool negativeOrEqualTen) {
-        assembly {
-
-        }
+    int256 value
+) public pure returns (bool negativeOrEqualTen) {
+    assembly {
+        negativeOrEqualTen := or(eq(value, 10), slt(value, 0))
     }
+}
+
 
     /// @return inRange true if lower <= value <= upper, false otherwise
     function isInRange(
@@ -47,7 +51,11 @@ contract Comparisons {
         int256 upper
     ) public pure returns (bool inRange) {
         assembly {
-
+            let upper1:=add(upper,1)
+            let lower1:=sub(lower,1)
+            inRange:=and(lt(value,upper1),gt(value,lower1))
         }
+        return inRange;
     }
+    
 }

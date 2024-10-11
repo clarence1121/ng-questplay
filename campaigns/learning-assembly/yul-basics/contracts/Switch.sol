@@ -14,7 +14,19 @@ contract Switch {
         returns (bytes8 direction)
     {
         assembly {
-
+            switch mod(id,4)
+            case 0{
+                direction:="left"
+            }
+            case 1{
+                direction:="right"
+            }
+            case 2{
+                direction:="forward"
+            }
+            case 3{
+                direction:="backward"
+            }
         }
     }
 }

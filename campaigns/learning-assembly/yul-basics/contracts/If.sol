@@ -13,7 +13,12 @@ contract If {
         returns (uint256 _hours)
     {
         assembly {
-
+    // 使用 eq 檢查 mod(_minutes, 60) 是否不等於 0
+            if or(gt(mod(_minutes, 60), 0),slt(_minutes,0)){
+                revert(0,0)
+            }
+            _hours:=div(_minutes , 60)
         }
+        return _hours;
     }
 }
