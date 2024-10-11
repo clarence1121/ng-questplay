@@ -5,40 +5,85 @@ contract SafeMath {
 
     /// @notice Returns lhs + rhs.
     /// @dev Reverts on overflow / underflow.
-    //相加的結果小於任何一個都代表overflow
-    function add(
-        int256 lhs, 
-        int256 rhs
-    ) public pure returns (int256 result) {
-        result = lhs+rhs;
-        // // Convert this to assembly
-        // assembly{
-        //     let temp := add(lhs,rhs)
-        //     if or(lt(temp , lhs),lt(temp,rhs)){
-        //         revert(0,0)
-        //     } 
-        //     result:=temp 
-        // }
+    function add(int256 lhs, int256 rhs) public pure returns (int256 result) {
+        assembly {
+            // Perform the addition
+            let temp := add(lhs, rhs)
+
+            // Check for overflow
+            // Positive overflow: both lhs and rhs are positive, but temp is negative
+            if and(gt(lhs, 0), and(gt(rhs, 0), lt(temp, 0))) {
+                revert(0, 0)
+            }
+            // Negative overflow: both lhs and rhs are negative, but temp is positive
+            if and(lt(lhs, 0), and(lt(rhs, 0), gt(temp, 0))) {
+                revert(0, 0)
+            }
+
+            // Set the result to temp
+            result := temp
+        }
     }
 
     /// @notice Returns lhs - rhs.
     /// @dev Reverts on overflow / underflow.
     function sub(int256 lhs, int256 rhs) public pure returns (int256 result) {
-        // Convert this to assembly
-        result = lhs - rhs;
+        assembly {
+            // Perform the subtraction
+            let temp := sub(lhs, rhs)
+
+            // Check for overflow / underflow
+            // For int256, overflow happens if lhs and rhs have different signs
+            // and the result sign is opposite to lhs
+            if and(xor(slt(lhs, 0), slt(rhs, 0)), xor(slt(lhs, 0), slt(temp, 0))) {
+                revert(0, 0)
+            }
+
+            // Set the result to temp
+            result := temp
+        }
     }
 
     /// @notice Returns lhs * rhs.
     /// @dev Reverts on overflow / underflow.
     function mul(int256 lhs, int256 rhs) public pure returns (int256 result) {
-        // Convert this to assembly
-        result = lhs * rhs;
+        assembly {
+            // Handle multiplication overflow
+            // Special cases: multiplication by 0
+            if iszero(lhs) {
+                result := 0
+            }
+            if iszero(rhs) {
+                result := 0
+            }
+            // Perform the multiplication
+            let temp := mul(lhs, rhs)
+
+            // Check for overflow by dividing temp by rhs and comparing to lhs
+            if iszero(eq(sdiv(temp, rhs), lhs)) {
+                revert(0, 0)
+            }
+
+            // Set the result to temp
+            result := temp
+        }
     }
 
     /// @notice Returns lhs / rhs.
-    /// @dev Reverts on overflow / underflow.
+    /// @dev Reverts on division by zero or overflow.
     function div(int256 lhs, int256 rhs) public pure returns (int256 result) {
-        // Convert this to assembly
-        result = lhs / rhs;
+        assembly {
+            // Revert if dividing by zero
+            if iszero(rhs) {
+                revert(0, 0)
+            }
+            // Handle int256 minimum value divided by -1 (overflow)
+            if and(eq(lhs, 0x8000000000000000000000000000000000000000000000000000000000000000), eq(rhs, not(0))) {
+                revert(0, 0)
+            }
+
+            // Perform the division
+            result := sdiv(lhs, rhs)
+        }
     }
 }
