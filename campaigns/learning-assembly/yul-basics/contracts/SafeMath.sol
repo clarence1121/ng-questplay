@@ -10,14 +10,15 @@ contract SafeMath {
         int256 lhs, 
         int256 rhs
     ) public pure returns (int256 result) {
-        // Convert this to assembly
-        assembly{
-            let temp := add(lhs,rhs)
-            if or(lt(temp , lhs),lt(temp,rhs)){
-                revert(0,0)
-            } 
-            result:=temp 
-        }
+        result = lhs+rhs;
+        // // Convert this to assembly
+        // assembly{
+        //     let temp := add(lhs,rhs)
+        //     if or(lt(temp , lhs),lt(temp,rhs)){
+        //         revert(0,0)
+        //     } 
+        //     result:=temp 
+        // }
     }
 
     /// @notice Returns lhs - rhs.
