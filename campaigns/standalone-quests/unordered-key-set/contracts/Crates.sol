@@ -10,6 +10,10 @@ contract Crates is ICrates {
     }
     mapping(uint=>crates) public crates_mapping;
     uint[] internal is_init;//用來記錄id存不存在
+
+    //建立一個mapping把id對到他對應的index
+    mapping(uint=>uint) internal id_index;
+
         // CODE HERE
     /// @notice Inserts a crate into the contract. Fails if id belongs to an existing crate.
     function insertCrate(
@@ -23,6 +27,7 @@ contract Crates is ICrates {
         require(crates_mapping[id].size==0&&crates_mapping[id].strength==0,"already existing");
         crates_mapping[id] = crates(size , strength);
         is_init.push(id);
+        id_index[id] = is_init.length;
     }
 
    /// @notice Retrieves a crate based on id. Fails if id does not belong to an existing crate.
@@ -42,13 +47,16 @@ contract Crates is ICrates {
         require(crates_mapping[id].size != 0 || crates_mapping[id].strength != 0, "Crate does not exist");
 
         delete crates_mapping[id];
-        // Remove id from crateIds array (not optimal, but simple)
-        for (uint i = 0; i < is_init.length; i++) {
-            if (is_init[i] == id) {
-                is_init[i] = is_init[is_init.length - 1];
-                is_init.pop();
-                break;
-            }
-        }
+        is_init[id_index[id]] = is_init[is_init.length-1];
+        is_init.pop;
+        delete id_index[id];
+        // // Remove id from crateIds array (not optimal, but simple)
+        // for (uint i = 0; i < is_init.length; i++) {
+        //     if (is_init[i] == id) {
+        //         is_init[i] = is_init[is_init.length - 1];
+        //         is_init.pop();
+        //         break;
+        //     }
+        // }
     }
 }
