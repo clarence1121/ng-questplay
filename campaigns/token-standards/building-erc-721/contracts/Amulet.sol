@@ -239,26 +239,20 @@ contract Amulet {
      * @dev 內部函數，檢查接收者是否支持 ERC721 接口
      */
     function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data)
-        internal
-        returns (bool)
-    {
-        if (isContract(to)) {
-            try IERC721TokenReceiver(to).onERC721Received(msg.sender, from, tokenId, _data) returns (bytes4 retval) {
-                return retval == IERC721TokenReceiver.onERC721Received.selector;
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert("Amulet: transfer to non ERC721Receiver implementer");
-                } else {
-                    // 向上拋出錯誤訊息
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
-                }
-            }
-        } else {
-            return true;
+    internal
+    returns (bool)
+{
+    if (to.code.length > 0) {
+        try IERC721TokenReceiver(to).onERC721Received(msg.sender, from, tokenId, _data) returns (bytes4 retval) {
+            return retval == IERC721TokenReceiver.onERC721Received.selector;
+        } catch {
+            revert("Amulet: transfer to non ERC721Receiver implementer");
         }
+    } else {
+        return true;
     }
+}
+
 
     /**
      * @dev 內部函數，檢查地址是否為合約

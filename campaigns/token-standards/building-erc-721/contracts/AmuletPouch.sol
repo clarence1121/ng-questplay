@@ -117,13 +117,13 @@ contract AmuletPouch {
         delete _ownedTokens[tokenId];
 
         // Remove tokenId from _tokenIds array
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            if (_tokenIds[i] == tokenId) {
-                _tokenIds[i] = _tokenIds[_tokenIds.length - 1];
-                _tokenIds.pop();
-                break;
-            }
-        }
+        // for (uint256 i = 0; i < _tokenIds.length; i++) {
+        //     if (_tokenIds[i] == tokenId) {
+        //         _tokenIds[i] = _tokenIds[_tokenIds.length - 1];
+        //         _tokenIds.pop();
+        //         break;
+        //     }
+        // }
 
         // Transfer the token to the requester
         amulet.transferFrom(address(this), requester, tokenId);
@@ -149,7 +149,7 @@ contract AmuletPouch {
 
         // Record that the contract owns the token
         _ownedTokens[_tokenId] = true;
-        _tokenIds.push(_tokenId);
+       // _tokenIds.push(_tokenId);
 
         // If data is provided, create a withdrawal request
         if (_data.length > 0) {
@@ -174,8 +174,8 @@ contract AmuletPouch {
 
             _currentRequestId += 1;
         }
-
-        return this.onERC721Received.selector;
+        //return this.onERC721Received.selector;
+        return  bytes4(keccak256(abi.encodePacked("onERC721Received(address,address,uint256,bytes)")));
     }
 
     /**
@@ -183,6 +183,7 @@ contract AmuletPouch {
      */
     function getCurrentRequestId() external view returns (uint256) {
         return _currentRequestId;
+        
     }
 
     /**
