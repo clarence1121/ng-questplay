@@ -44,30 +44,45 @@ contract SafeMath {
         }
     }
 
-    /// @notice Returns lhs * rhs.
-    /// @dev Reverts on overflow / underflow.
     function mul(int256 lhs, int256 rhs) public pure returns (int256 result) {
-        assembly {
-            // Handle multiplication overflow
-            // Special cases: multiplication by 0
-            if iszero(lhs) {
-                result := 0
-            }
-            if iszero(rhs) {
-                result := 0
-            }
-            // Perform the multiplication
-            let temp := mul(lhs, rhs)
+    assembly {
+        // Handle multiplication by 0
+        if or(iszero(lhs), iszero(rhs)) {
+            result := 0
+            // Return early to avoid further computation
+            stop()
+        }
 
-            // Check for overflow by dividing temp by rhs and comparing to lhs
-            if iszero(eq(sdiv(temp, rhs), lhs)) {
+        // Define int256_min = -2^255
+        let int256_min := not(0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+
+        // Handle INT256_MIN * -1 overflow case
+        if eq(lhs, int256_min) {
+            if eq(rhs, not(0)) {
                 revert(0, 0)
             }
-
-            // Set the result to temp
-            result := temp
         }
+
+        if eq(rhs, int256_min) {
+            if eq(lhs, not(0)) {
+                revert(0, 0)
+            }
+        }
+
+        // Perform the multiplication
+        let temp := mul(lhs, rhs)
+
+        // Since rhs is not zero (handled above), we can safely perform the division
+        // Check for overflow by verifying if temp / rhs == lhs
+        if iszero(eq(sdiv(temp, rhs), lhs)) {
+            revert(0, 0)
+        }
+
+        // Set the result to temp
+        result := temp
     }
+}
+
 
     /// @notice Returns lhs / rhs.
     /// @dev Reverts on division by zero or overflow.
