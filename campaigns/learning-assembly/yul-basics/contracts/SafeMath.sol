@@ -12,11 +12,11 @@ contract SafeMath {
 
             // Check for overflow
             // Positive overflow: both lhs and rhs are positive, but temp is negative
-            if and(gt(lhs, 0), and(gt(rhs, 0), lt(temp, 0))) {
+            if and(sgt(lhs, 0), and(sgt(rhs, 0), slt(temp, 0))) {
                 revert(0, 0)
             }
             // Negative overflow: both lhs and rhs are negative, but temp is positive
-            if and(lt(lhs, 0), and(lt(rhs, 0), gt(temp, 0))) {
+            if and(slt(lhs, 0), and(slt(rhs, 0), sgt(temp, 0))) {
                 revert(0, 0)
             }
 
