@@ -35,10 +35,10 @@ contract Arithmetic {
         
         assembly {
             if eq(lhs,0){
-                result:=0
+                result:=lhs
             }
             if eq(rhs,0){
-                result:=rhs
+                result:=0
             }
             result:= mod(lhs,rhs)
         }
