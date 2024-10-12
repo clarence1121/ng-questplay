@@ -8,7 +8,7 @@ contract Comparisons {
         assembly {
             isZero_ :=eq(value , 0)
         }
-        return isZero_;
+        
     }
 
     /// @notice Returns lhs > rhs.
@@ -20,7 +20,7 @@ contract Comparisons {
         assembly {
             greater:=gt(lhs , rhs)
         }
-        return greater;
+        
     }
 
     /// @notice Returns lhs < rhs.
@@ -31,7 +31,7 @@ contract Comparisons {
         assembly {
             lower := slt(lhs,rhs)
         }
-        return lower;
+        
     }
 
     /// @notice Returns true if value < 0 or value == 10, false otherwise.
@@ -53,9 +53,9 @@ contract Comparisons {
         assembly {
             let upper1:=add(upper,1)
             let lower1:=sub(lower,1)
-            inRange:=and(lt(value,upper1),gt(value,lower1))
+            inRange:=and(slt(value,upper1),sgt(value,lower1))
         }
-        return inRange;
+        
     }
     
 }
