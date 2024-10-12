@@ -18,7 +18,7 @@ contract If {
                 revert(0,0)
             }
             _hours:=div(_minutes , 60)
+            _minutes:=_hours
         }
-        return _hours;
     }
 }
