@@ -38,20 +38,17 @@ function createBytesArray(
             mstore8(add(dataStart, i), value) // Store a single byte at position dataStart + i
         }
 
-        // **Corrected totalSize calculation with alignment**
-        // 確保是32的倍數
+        // Corrected totalSize calculation with 32-byte alignment
         let totalSize := add(
-            0x20,                            // Length slot
-            and(                             // Align to 32 bytes
-                add(size, 31),
-                not(31)
-            )
+            0x20,                            // Length slot (32 bytes)
+            size
         )
 
         // Update the free memory pointer to point after the array
-        mstore(0x40, add(array, totalSize))
+        mstore(0x40, add(array, totalSize)) // Update the free memory pointer
     }
 }
+
 
 
 }
