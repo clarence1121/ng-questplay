@@ -27,25 +27,24 @@ function createBytesArray(
     bytes1 value
 ) public pure returns (bytes memory array) {
     assembly {
-        // Allocate memory for the array
-        array := mload(0x40)              // Get the current free memory pointer
-        mstore(array, size)               // Store the length at the beginning (32 bytes)
+        
+        array := mload(0x40)
 
-        let dataStart := add(array, 0x20) // Data starts after the length slot
+     
+        mstore(array, size)
 
-        // Loop to initialize each byte in the array
+       
+        let dataStart := add(array, 0x20)
+
+       
         for { let i := 0 } lt(i, size) { i := add(i, 1) } {
-            mstore8(add(dataStart, i), value) // Store a single byte at position dataStart + i
+            mstore8(add(dataStart, i), value)
         }
 
-        // Corrected totalSize calculation with 32-byte alignment
-        let totalSize := add(
-            0x20,                            // Length slot (32 bytes)
-            size
-        )
+      
+        let totalSize := add(0x20, size) 
 
-        // Update the free memory pointer to point after the array
-        mstore(0x40, add(array, totalSize)) // Update the free memory pointer
+        mstore(0x40, add(array, totalSize))
     }
 }
 
