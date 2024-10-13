@@ -11,7 +11,14 @@ contract MemoryLayout {
         uint256 value
     ) public pure returns (uint256[] memory array) {
         assembly {
-
+            array:=mload(0x40)
+            mstore(array,size)//把size存到起始位置
+            let offset:=0x20//to decimal = 32  means 32 bytes
+            for {let i := 0} lt(i, size) {i := add(i, 0x01)} {
+                mstore(add(array, offset), value)
+                offset := add(offset, 0x20)
+            }
+            mstore(0x40 , add(array,offset))
         }
     }
 
@@ -23,7 +30,15 @@ contract MemoryLayout {
         bytes1 value
     ) public pure returns (bytes memory array) {
         assembly {
-            
+            array:=mload(0x40)
+            mstore(array , size)
+            let offset := 0x20
+            for{let i :=0}lt(i,size){i:=add(i,0x01)}{
+                mstore(add(offset,array),value)
+                offset:=add(array,0x1)
+            }
+            mstore(0x40,add(array,offset))
+
         }
     }
 }
