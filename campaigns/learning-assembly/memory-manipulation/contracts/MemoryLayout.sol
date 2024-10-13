@@ -26,31 +26,27 @@ function createBytesArray(
     bytes1 value
 ) public pure returns (bytes memory array) {
     assembly {
-        // Get the current free memory pointer
+        // 獲取當前的內存指針（0x40標誌free memory pointer位置）
         array := mload(0x40)
 
-        // Store the length at the beginning of the memory
+        // 將size存儲到內存中的array的第一個32位元位置，代表元素數量
         mstore(array, size)
 
-        // Calculate the start of the data section
+        // 資料從array的第32位元位置開始，因為第一個32位是size
         let dataStart := add(array, 0x20)
 
-        // Initialize each byte of the data section to `value`
-        for { let i := 0 } lt(i, size) { i := add(i, 1) } {
+        // 使用循環將每個byte都初始化為`value`
+        for { let i := 0 } lt(i, size) { i := add(i, 0x1) } {
             mstore8(add(dataStart, i), value)
         }
 
-        // Calculate the padded size of the data section (round up to nearest 32 bytes)
-        let sizeRoundedUp := and(add(size, 31), not(31))
+        // 計算所需的內存大小 (32 bytes for length + actual data size)
+        let totalSize := add(0x20, size) 
 
-        // Calculate the total size (length slot + padded data size)
-        let totalSize := add(0x20, sizeRoundedUp)
-
-        // Update the free memory pointer to point after the allocated memory
+        // 更新free memory pointer位置，確保不會覆蓋到分配的內存
         mstore(0x40, add(array, totalSize))
     }
 }
-
 
 
 
