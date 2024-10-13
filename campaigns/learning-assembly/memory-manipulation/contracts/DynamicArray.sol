@@ -46,7 +46,7 @@ contract DynamicArray {
         function pop(uint256[] memory array) 
     public 
     pure 
-    returns (uint256[] memory) 
+    returns (uint256[] memory _array) 
 {
     assembly {
         // Load the length of the original array
@@ -67,10 +67,11 @@ contract DynamicArray {
 
         // Zero out the last element
         mstore(lastElemPos, 0)
+        _array:=array
     }
 
     // Return the modified array (the original array is modified in place)
-    return array;
+    
 }
 
 
@@ -79,7 +80,7 @@ contract DynamicArray {
 function popAt(uint256[] memory array, uint256 index) 
     public 
     pure 
-    returns (uint256[] memory) 
+    returns (uint256[] memory _array) 
 {
     assembly {
         // Load the length of the original array
@@ -109,10 +110,9 @@ function popAt(uint256[] memory array, uint256 index)
 
         // Update the array length
         mstore(array, sub(len, 1))
+        _array:=array
     }
 
-    // Return the modified array
-    return array;
 }
 
 
