@@ -21,32 +21,37 @@ contract MemoryLayout {
             mstore(0x40 , add(array,offset))
         }
     }
-
 function createBytesArray(
     uint256 size, 
     bytes1 value
 ) public pure returns (bytes memory array) {
     assembly {
-        
+        // Get the current free memory pointer
         array := mload(0x40)
 
-     
+        // Store the length at the beginning of the memory
         mstore(array, size)
 
-       
+        // Calculate the start of the data section
         let dataStart := add(array, 0x20)
 
-       
+        // Initialize each byte of the data section to `value`
         for { let i := 0 } lt(i, size) { i := add(i, 1) } {
             mstore8(add(dataStart, i), value)
         }
 
-      
-        let totalSize := add(0x20, size) 
+        // Calculate the padded size of the data section (round up to nearest 32 bytes)
+        let sizeRoundedUp := and(add(size, 31), not(31))
 
+        // Calculate the total size (length slot + padded data size)
+        let totalSize := add(0x20, sizeRoundedUp)
+
+        // Update the free memory pointer to point after the allocated memory
         mstore(0x40, add(array, totalSize))
     }
 }
+
+
 
 
 
