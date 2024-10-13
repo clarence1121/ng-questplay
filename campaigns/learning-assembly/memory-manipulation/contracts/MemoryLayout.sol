@@ -35,20 +35,30 @@ function createBytesArray(
         // 資料從array的第32位元位置開始，因為第一個32位是size
         let dataStart := add(array, 0x20)
 
-        // 使用循環將每個byte都初始化為`value`
-        // 為了實現左對齊，我們從32字節的最高位開始存儲數據
+        // 使用循環將每個byte都初始化為value，從高位開始存放
         for { let i := 0 } lt(i, size) { i := add(i, 0x1) } {
-            // 在每個 32 字節區塊內，我們從高位 (31 - i) 開始放置 value
-            mstore8(add(dataStart, i), value)
+            // 計算當前所在的32字節區塊索引
+            let wordIndex := div(i, 0x20)
+            // 計算當前字節在區塊內的索引
+            let byteIndex := mod(i, 0x20)
+            // 計算應該存放的內存地址，從高位開始
+            let address1 := add(dataStart, add(mul(wordIndex, 0x20), sub(0x1f, byteIndex)))
+            mstore8(address1, value)
         }
 
         // 計算所需的內存大小 (32 bytes for length + actual data size)
-        let totalSize := add(0x20, size)
+        let totalSize := add(0x20, size) 
+
+        // 將totalSize向上取整到32的倍數，以確保內存對齊
+        if mod(totalSize, 0x20) {
+            totalSize := add(totalSize, sub(0x20, mod(totalSize, 0x20)))
+        }
 
         // 更新free memory pointer位置，確保不會覆蓋到分配的內存
         mstore(0x40, add(array, totalSize))
     }
 }
+
 
 
 
