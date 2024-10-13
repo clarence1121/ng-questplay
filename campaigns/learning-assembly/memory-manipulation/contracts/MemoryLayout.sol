@@ -22,23 +22,29 @@ contract MemoryLayout {
         }
     }
 
-    /// @notice Create a bytes memory array.
-    /// @param size The size of the array.
-    /// @param value The initial value of each element of the array.
-    function createBytesArray(
-        uint256 size, 
-        bytes1 value
-    ) public pure returns (bytes memory array) {
-        assembly {
-            array:=mload(0x40)
-            mstore(array , size)
-            let offset := 0x20
-            for{let i :=0}lt(i,size){i:=add(i,0x01)}{
-                mstore(add(offset,array),value)
-                offset:=add(array,0x1)
-            }
-            mstore(0x40,add(array,offset))
+   function createBytesArray(
+    uint256 size, 
+    bytes1 value
+) public pure returns (bytes memory array) {
+    assembly {
+        // Allocate memory for the array
+        array := mload(0x40)              // Get the current free memory pointer
+        mstore(array, size)               // Store the length at the beginning (32 bytes)
 
+        let dataStart := add(array, 0x20) // Data starts after the length slot
+
+        // Loop to initialize each byte in the array
+        // 注意不能用mstore不然他會當成32byte
+        for { let i := 0 } lt(i, size) { i := add(i, 1) } {
+            mstore8(add(dataStart, i), value) // Store a single byte at position dataStart + i
         }
+
+        // Calculate the total size: length slot (32 bytes) + data size
+        let totalSize := add(0x20, size)
+
+        // Update the free memory pointer to point after the array
+        mstore(0x40, add(array, totalSize))
     }
+}
+
 }
