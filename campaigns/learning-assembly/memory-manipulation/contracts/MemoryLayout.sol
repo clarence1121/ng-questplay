@@ -22,7 +22,7 @@ contract MemoryLayout {
         }
     }
 
-   function createBytesArray(
+function createBytesArray(
     uint256 size, 
     bytes1 value
 ) public pure returns (bytes memory array) {
@@ -34,17 +34,24 @@ contract MemoryLayout {
         let dataStart := add(array, 0x20) // Data starts after the length slot
 
         // Loop to initialize each byte in the array
-        // 注意不能用mstore不然他會當成32byte
         for { let i := 0 } lt(i, size) { i := add(i, 1) } {
             mstore8(add(dataStart, i), value) // Store a single byte at position dataStart + i
         }
 
-        // Calculate the total size: length slot (32 bytes) + data size
-        let totalSize := add(0x20, size)
+        // **Corrected totalSize calculation with alignment**
+        // 確保是32的倍數
+        let totalSize := add(
+            0x20,                            // Length slot
+            and(                             // Align to 32 bytes
+                add(size, 31),
+                not(31)
+            )
+        )
 
         // Update the free memory pointer to point after the array
         mstore(0x40, add(array, totalSize))
     }
 }
+
 
 }
