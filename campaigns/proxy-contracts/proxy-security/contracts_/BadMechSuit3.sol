@@ -20,6 +20,7 @@ contract BadMechSuit3 {
         }
     }
 
+    //實際上keccak
     function upgradeTo(uint8 mode) external {
         impl = address(new MultiSuitLogic());
         (bool result, ) = address(this).call(
