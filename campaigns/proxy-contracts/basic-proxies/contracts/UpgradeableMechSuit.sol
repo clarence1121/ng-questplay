@@ -60,7 +60,7 @@ contract UpgradeableMechSuit {
     function _setImplementation(address newImplementation) internal {
         bytes32 slot = _IMPLEMENTATION_SLOT;
         assembly {
-            sstore(slot, newImplementation)
+            sstore(slot, newImplementation)//在剛剛指定的slot存入state variable
         }
     }
 
@@ -76,10 +76,11 @@ contract UpgradeableMechSuit {
     function _setAdmin(address newAdmin) internal {
         bytes32 slot = _ADMIN_SLOT;
         assembly {
-            sstore(slot, newAdmin)
+            sstore(slot, newAdmin)//在剛剛指定的slot存入state variable
         }
     }
 
     /// @notice Fallback function for receiving Ether
     receive() external payable {}
 }
+
