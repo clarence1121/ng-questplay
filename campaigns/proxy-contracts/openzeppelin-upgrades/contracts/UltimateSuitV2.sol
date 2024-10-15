@@ -1,33 +1,35 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
-contract UltimateSuitV2 is ERC721 {
 
-    event Detonate(uint256 bombId);
-
+contract UltimateSuitV2 is ERC721Upgradeable {
     enum Status {
         CONFIRMED_BY_A,
         CONFIRMED_BY_B,
-        LAUNCHED,
-        DETONATED
+        LAUNCHED
+        //DETONATED
     }
 
     struct BombStats {
-        address initialTarget;
+        address target;
         uint256 damage;
-        uint8 transfersLeft; // Transfers before bomb detonates
+        //uint8 transfersLeft;  // Transfers before bomb detonates
         Status status;
     }
-
-    uint8 constant TRANSFERS = 3;
-
     address private pilotA;
     address private pilotB;
-
-    mapping (uint => BombStats) private bombStats;
     uint256 public bombCount;
+    mapping (uint => BombStats) private bombStats;
+    string _name;
+    string _symbol;
+    bool is_initialize;
+    uint8 constant TRANSFERS = 3;
+    mapping(uint256=>bool)detonated;
+    mapping(uint256=>uint8)transfersLeft;
+    event Detonate(uint256 bombId);
+    
 
     modifier isPilot(address _address) {
         require(_address == pilotA || _address == pilotB, "Not a pilot");
@@ -45,15 +47,22 @@ contract UltimateSuitV2 is ERC721 {
         _; 
     }
 
-    constructor() ERC721("Ultimate Suit", "SUIT") {}
-
+    //constructor() ERC721("Ultimate Suit", "SUIT") {}
+    function initialize(address _pilotA, address _pilotB)external{
+        require(!is_initialize , "already init");
+        _name = "Ultimate Suit";
+        _symbol = "SUIT";
+        pilotA = _pilotA;
+        pilotB = _pilotB;
+        is_initialize = true;
+    }
     function createBomb(
         address _initialTarget, 
         uint256 _damage
     ) public isPilot(msg.sender) returns (uint256 bombId) {
         _mint(address(this), bombCount);
         BombStats storage stats = bombStats[bombCount];
-        stats.initialTarget = _initialTarget;
+        stats.target = _initialTarget;
         stats.damage = _damage;
         stats.status = msg.sender == pilotA
             ? Status.CONFIRMED_BY_A
@@ -67,14 +76,28 @@ contract UltimateSuitV2 is ERC721 {
         isUnconfirmed(bombId, msg.sender)
     {
         bombStats[bombId].status = Status.LAUNCHED;
-        bombStats[bombId].transfersLeft = TRANSFERS;
+        transfersLeft[bombId] = TRANSFERS;
         _transfer(
             address(this), 
-            bombStats[bombId].initialTarget,
+            bombStats[bombId].target,
             bombId
         );
     }
 
+    /**
+     * @dev See {IERC721Metadata-name}.
+     */
+    function name() public view override returns (string memory) {
+        return _name;
+    }
+
+    /**
+     * @dev See {IERC721Metadata-symbol}.
+     */
+
+    function symbol() public view override returns (string memory) {
+        return _symbol;
+    }
     function getPilots() external view returns (address, address) {
         return (pilotA, pilotB);
     }
@@ -84,12 +107,19 @@ contract UltimateSuitV2 is ERC721 {
         address to, 
         uint256 bombId
     ) internal override {
-        require(bombStats[bombId].status != Status.DETONATED, "Bomb already detonated");
+        //require(bombStats[bombId].status != Status.DETONATED, "Bomb already detonated");
+        require(!detonated[bombId], "Bomb already detonated");
 
-        bombStats[bombId].transfersLeft--;
-        if (bombStats[bombId].transfersLeft == 0) {
+        //bombStats[bombId].transfersLeft--;
+        transfersLeft[bombId]--;
+        // if (bombStats[bombId].transfersLeft == 0) {
+        //     emit Detonate(bombId);
+        //     bombStats[bombId].status = Status.DETONATED;
+        // }
+        if (transfersLeft[bombId] == 0) {
             emit Detonate(bombId);
-            bombStats[bombId].status = Status.DETONATED;
+            //bombStats[bombId].status = Status.DETONATED;
+            detonated[bombId] = true;
         }
         super._transfer(from, to, bombId);
     }
